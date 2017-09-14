@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "types": "./declarations/index.d.ts",
   "dependencies": {
+    "ini-builder": "^1.0.3",
     "raspi-peripheral": "^2.0.0"
   },
   "devDependencies": {
@@ -21,7 +22,8 @@
   "scripts": {
     "prebuild": "tslint src/**/*.ts",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "echo \"Enabling 1-Wire at boot time, you may be asked for your password\" && sudo env \"PATH=$PATH\" script/enable_onewire.js"
   },
   "repository": {
     "type": "git",

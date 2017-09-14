@@ -31,13 +31,13 @@ npm install raspi-onewire
 
 ## Example Usage
 
-In TypeScript/ES6:
+In TypeScript/ES2015+:
 
 ```JavaScript
 
 ```
 
-In JavaScript:
+In JavaScript/ES5:
 
 ```JavaScript
 
