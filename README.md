@@ -34,20 +34,200 @@ npm install raspi-onewire
 In TypeScript/ES2015+:
 
 ```JavaScript
+import { init } from 'raspi';
+import { OneWire } from 'raspi-onewire';
 
+init(() => {
+  const bus = new OneWire();
+  bus.searchForDevices((err, devices) => {
+    bus.readAllAvailable(devices[0], (err, data) => {
+      console.log(data);
+    });
+  });
+});
 ```
 
 In JavaScript/ES5:
 
 ```JavaScript
+const raspi = require('raspi');
+const OneWire = require('raspi-onewire').OneWire;
 
+raspi.init(() => {
+  const bus = new OneWire();
+  bus.searchForDevices((err, devices) => {
+    bus.readAllAvailable(devices[0], (err, data) => {
+      console.log(data);
+    });
+  });
+});
 ```
 
 ## API
 
 ### new OneWire()
 
+Instantiates a new OneWire instance. Note that OneWire only works on pin `GPIO4`.
+
+_Arguments_: None
+
 ### Instance Methods
+
+#### searchForDevices(cb)
+
+Searches for all devices currently attached to the bus.
+
+_Arguments_:
+
+<table>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tr>
+    <td>cb</td>
+    <td>Function</td>
+    <td>The callback to call with the results.</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td colspan="2">
+      <table>
+        <thead>
+          <tr>
+            <th>Argument</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tr>
+          <td>err</td>
+          <td>String | Error | undefined</td>
+          <td>The error, if one occurred, else undefined</td>
+        </tr>
+        <tr>
+          <td>devices</td>
+          <td>undefined | String[]</td>
+          <td>If no error occurred, an array of zero or more device IDs</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+_Returns_: None
+
+#### read(deviceID, numBytesToRead, cb)
+
+Reads the specified number of bytes from the device specified.
+
+_Arguments_:
+
+<table>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tr>
+    <td>deviceId</td>
+    <td>String</td>
+    <td>The ID of the device, as returned from <code>searchForDevices</code>.</td>
+  </tr>
+  <tr>
+    <td>numBytesToRead</td>
+    <td>Number</td>
+    <td>The number of bytes to read.</td>
+  </tr>
+  <tr>
+    <td>cb</td>
+    <td>Function</td>
+    <td>The callback to call with the read data.</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td colspan="2">
+      <table>
+        <thead>
+          <tr>
+            <th>Argument</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tr>
+          <td>err</td>
+          <td>String | Error | undefined</td>
+          <td>The error, if one occurred, else undefined</td>
+        </tr>
+        <tr>
+          <td>data</td>
+          <td>undefined | Buffer</td>
+          <td>If no error occurred, the read data. The number of bytes read may be less than <code>numBytesToRead</code> if there are not that many bytes to read at the time of the call.</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+_Returns_: None
+
+#### readAllAvailable(deviceID, cb)
+
+Reads all available bytes from the device specified.
+
+_Arguments_:
+
+<table>
+  <thead>
+    <tr>
+      <th>Argument</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tr>
+    <td>deviceId</td>
+    <td>String</td>
+    <td>The ID of the device, as returned from <code>searchForDevices</code>.</td>
+  </tr>
+  <tr>
+    <td>cb</td>
+    <td>Function</td>
+    <td>The callback to call with the read data.</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td colspan="2">
+      <table>
+        <thead>
+          <tr>
+            <th>Argument</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tr>
+          <td>err</td>
+          <td>String | Error | undefined</td>
+          <td>The error, if one occurred, else undefined</td>
+        </tr>
+        <tr>
+          <td>data</td>
+          <td>undefined | Buffer</td>
+          <td>If no error occurred, the read data.</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+_Returns_: None
 
 License
 =======

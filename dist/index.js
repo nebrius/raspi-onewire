@@ -33,12 +33,73 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+var path_1 = require("path");
+var fs_1 = require("fs");
 var raspi_peripheral_1 = require("raspi-peripheral");
+var child_process_1 = require("child_process");
+var ONEWIRE_PIN = 'GPIO4';
+var DEVICES_DIR = '/sys/bus/w1/devices/w1_bus_master1';
 var OneWire = /** @class */ (function (_super) {
     __extends(OneWire, _super);
     function OneWire() {
-        return _super !== null && _super.apply(this, arguments) || this;
+        var _this = _super.call(this, ONEWIRE_PIN) || this;
+        child_process_1.execSync('modprobe w1-gpio');
+        return _this;
     }
+    OneWire.prototype.searchForDevices = function (cb) {
+        fs_1.readFile(path_1.join(DEVICES_DIR, 'w1_master_slaves'), function (err, data) {
+            if (err) {
+                cb(err, undefined);
+                return;
+            }
+            // Clean up the raw data and find out if there are no devices attached (edge case)
+            var rawData = data.toString().trim();
+            if (rawData.toLowerCase() === 'not found.') {
+                cb(undefined, []);
+                return;
+            }
+            // Filter out blank lines and devices whose ID starts with `00` which is technically an error code
+            var filteredData = rawData.split('\n')
+                .filter(function (device) { return !!device.length; })
+                .filter(function (device) { return device.indexOf('00') !== 0; });
+            cb(undefined, filteredData);
+        });
+    };
+    OneWire.prototype.read = function (deviceID, numBytesToRead, cb) {
+        var devicePath = path_1.join(DEVICES_DIR, deviceID, 'w1_slave');
+        fs_1.exists(devicePath, function (fileExists) {
+            if (!fileExists) {
+                cb(new Error("Unknown device ID " + deviceID), undefined);
+                return;
+            }
+            fs_1.open(devicePath, 'r', function (openErr, fd) {
+                if (openErr) {
+                    cb(openErr, undefined);
+                    return;
+                }
+                var data = new Buffer(numBytesToRead); // TODO: convert to Buffer.alloc once Node 4 is EOL'ed
+                fs_1.read(fd, data, 0, numBytesToRead, 0, function (readErr, bytesRead) {
+                    if (readErr) {
+                        cb(readErr, undefined);
+                        return;
+                    }
+                    var finalData = new Buffer(bytesRead);
+                    data.copy(finalData, 0, 0, bytesRead);
+                    cb(undefined, finalData);
+                });
+            });
+        });
+    };
+    OneWire.prototype.readAllAvailable = function (deviceID, cb) {
+        var devicePath = path_1.join(DEVICES_DIR, deviceID, 'w1_slave');
+        fs_1.exists(devicePath, function (fileExists) {
+            if (!fileExists) {
+                cb(new Error("Unknown device ID " + deviceID), undefined);
+                return;
+            }
+            fs_1.readFile(devicePath, cb);
+        });
+    };
     return OneWire;
 }(raspi_peripheral_1.Peripheral));
 exports.OneWire = OneWire;
