@@ -1,0 +1,41 @@
+{
+  "name": "raspi-onewire",
+  "version": "1.0.0",
+  "description": "Provides access to 1-Wire on the Raspberry Pi from Node.js",
+  "main": "dist/index.js",
+  "types": "./declarations/index.d.ts",
+  "dependencies": {
+    "raspi-peripheral": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^8.0.28",
+    "tslint": "^5.7.0",
+    "typescript": "^2.5.2"
+  },
+  "engines": {
+    "node": ">= 4.0.0"
+  },
+  "cpu": [
+    "arm"
+  ],
+  "scripts": {
+    "prebuild": "tslint src/**/*.ts",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nebrius/raspi-onewire.git"
+  },
+  "keywords": [
+    "nodebots",
+    "robotics",
+    "raspberry pi"
+  ],
+  "author": "Bryan Hughes <bryan@nebri.us>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nebrius/raspi-onewire/issues"
+  },
+  "homepage": "https://github.com/nebrius/raspi-onewire"
+}
