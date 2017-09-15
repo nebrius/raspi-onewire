@@ -135,8 +135,8 @@ _Arguments_:
     </tr>
   </thead>
   <tr>
-    <td>deviceId</td>
-    <td>String</td>
+    <td>deviceID</td>
+    <td>Number[]</td>
     <td>The ID of the device, as returned from <code>searchForDevices</code>.</td>
   </tr>
   <tr>
@@ -192,8 +192,8 @@ _Arguments_:
     </tr>
   </thead>
   <tr>
-    <td>deviceId</td>
-    <td>String</td>
+    <td>deviceID</td>
+    <td>Number[]</td>
     <td>The ID of the device, as returned from <code>searchForDevices</code>.</td>
   </tr>
   <tr>

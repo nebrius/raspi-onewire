@@ -1,8 +1,11 @@
 /// <reference types="node" />
 import { Peripheral } from 'raspi-peripheral';
 export declare class OneWire extends Peripheral {
+    private _deviceIdMapping;
     constructor();
-    searchForDevices(cb: (err: string | Error | undefined, devices: string[] | undefined) => void): void;
-    read(deviceID: string, numBytesToRead: number, cb: (err: string | Error | undefined, data: Buffer | undefined) => void): void;
-    readAllAvailable(deviceID: string, cb: (err: string | Error | undefined, data: Buffer | undefined) => void): void;
+    private _convertIDToMappingKey(deviceID);
+    private _getNameFromID(deviceID);
+    searchForDevices(cb: (readErr: string | Error | undefined, devices: number[][] | undefined) => void): void;
+    read(deviceID: number[], numBytesToRead: number, cb: (err: string | Error | undefined, data: Buffer | undefined) => void): void;
+    readAllAvailable(deviceID: number[], cb: (err: string | Error | undefined, data: Buffer | undefined) => void): void;
 }

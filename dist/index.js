@@ -35,6 +35,7 @@ var __extends = (this && this.__extends) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 var path_1 = require("path");
 var fs_1 = require("fs");
+var async_1 = require("async");
 var raspi_peripheral_1 = require("raspi-peripheral");
 var child_process_1 = require("child_process");
 var ONEWIRE_PIN = 'GPIO4';
@@ -43,17 +44,25 @@ var OneWire = /** @class */ (function (_super) {
     __extends(OneWire, _super);
     function OneWire() {
         var _this = _super.call(this, ONEWIRE_PIN) || this;
+        _this._deviceIdMapping = {};
         child_process_1.execSync('modprobe w1-gpio');
         return _this;
     }
+    OneWire.prototype._convertIDToMappingKey = function (deviceID) {
+        return deviceID.join('-');
+    };
+    OneWire.prototype._getNameFromID = function (deviceID) {
+        return this._deviceIdMapping[this._convertIDToMappingKey(deviceID)];
+    };
     OneWire.prototype.searchForDevices = function (cb) {
-        fs_1.readFile(path_1.join(DEVICES_DIR, 'w1_master_slaves'), function (err, data) {
+        var _this = this;
+        fs_1.readFile(path_1.join(DEVICES_DIR, 'w1_master_slaves'), function (err, deviceNameListData) {
             if (err) {
                 cb(err, undefined);
                 return;
             }
             // Clean up the raw data and find out if there are no devices attached (edge case)
-            var rawData = data.toString().trim();
+            var rawData = deviceNameListData.toString().trim();
             if (rawData.toLowerCase() === 'not found.') {
                 cb(undefined, []);
                 return;
@@ -62,11 +71,31 @@ var OneWire = /** @class */ (function (_super) {
             var filteredData = rawData.split('\n')
                 .filter(function (device) { return !!device.length; })
                 .filter(function (device) { return device.indexOf('00') !== 0; });
-            cb(undefined, filteredData);
+            // Read the device IDs from the device Names
+            async_1.parallel(filteredData.map(function (deviceName) { return function (next) {
+                fs_1.readFile(path_1.join(DEVICES_DIR, deviceName, 'id'), function (convertErr, deviceIDData) {
+                    if (convertErr) {
+                        next(convertErr, undefined);
+                        return;
+                    }
+                    var deviceID = [];
+                    for (var i = 0; i < 8; i++) {
+                        deviceID[i] = deviceIDData[i];
+                    }
+                    _this._deviceIdMapping[_this._convertIDToMappingKey(deviceID)] = deviceName;
+                    next(undefined, deviceID);
+                });
+            }; }), function (mappingErr, deviceIds) {
+                if (mappingErr) {
+                    cb(mappingErr, undefined);
+                    return;
+                }
+                cb(undefined, deviceIds);
+            });
         });
     };
     OneWire.prototype.read = function (deviceID, numBytesToRead, cb) {
-        var devicePath = path_1.join(DEVICES_DIR, deviceID, 'w1_slave');
+        var devicePath = path_1.join(DEVICES_DIR, this._getNameFromID(deviceID), 'w1_slave');
         fs_1.exists(devicePath, function (fileExists) {
             if (!fileExists) {
                 cb(new Error("Unknown device ID " + deviceID), undefined);
@@ -91,7 +120,7 @@ var OneWire = /** @class */ (function (_super) {
         });
     };
     OneWire.prototype.readAllAvailable = function (deviceID, cb) {
-        var devicePath = path_1.join(DEVICES_DIR, deviceID, 'w1_slave');
+        var devicePath = path_1.join(DEVICES_DIR, this._getNameFromID(deviceID), 'w1_slave');
         fs_1.exists(devicePath, function (fileExists) {
             if (!fileExists) {
                 cb(new Error("Unknown device ID " + deviceID), undefined);

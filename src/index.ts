@@ -24,6 +24,7 @@ SOFTWARE.
 
 import { join } from 'path';
 import { readFile, exists, open, read } from 'fs';
+import { parallel } from 'async';
 import { Peripheral } from 'raspi-peripheral';
 import { execSync } from 'child_process';
 
@@ -32,20 +33,30 @@ const DEVICES_DIR = '/sys/bus/w1/devices/w1_bus_master1';
 
 export class OneWire extends Peripheral {
 
+  private _deviceIdMapping: { [ deviceId: string ]: string } = {};
+
   constructor() {
     super(ONEWIRE_PIN);
     execSync('modprobe w1-gpio');
   }
 
-  public searchForDevices(cb: (err: string | Error | undefined, devices: string[] | undefined) => void): void {
-    readFile(join(DEVICES_DIR, 'w1_master_slaves'), (err, data) => {
+  private _convertIDToMappingKey(deviceID: number[]): string {
+    return deviceID.join('-');
+  }
+
+  private _getNameFromID(deviceID: number[]): string {
+    return this._deviceIdMapping[this._convertIDToMappingKey(deviceID)];
+  }
+
+  public searchForDevices(cb: (readErr: string | Error | undefined, devices: number[][] | undefined) => void): void {
+    readFile(join(DEVICES_DIR, 'w1_master_slaves'), (err, deviceNameListData) => {
       if (err) {
         cb(err, undefined);
         return;
       }
 
       // Clean up the raw data and find out if there are no devices attached (edge case)
-      const rawData = data.toString().trim();
+      const rawData = deviceNameListData.toString().trim();
       if (rawData.toLowerCase() === 'not found.') {
         cb(undefined, []);
         return;
@@ -55,12 +66,33 @@ export class OneWire extends Peripheral {
       const filteredData = rawData.split('\n')
         .filter((device) => !!device.length)
         .filter((device) => device.indexOf('00') !== 0);
-      cb(undefined, filteredData);
+
+      // Read the device IDs from the device Names
+      parallel(filteredData.map((deviceName) => (next: (convertErr: string | Error | undefined, deviceId: number[] | undefined) => void) => {
+        readFile(join(DEVICES_DIR, deviceName, 'id'), (convertErr, deviceIDData) => {
+          if (convertErr) {
+            next(convertErr, undefined);
+            return;
+          }
+          const deviceID: number[] = [];
+          for (let i = 0; i < 8; i++) {
+            deviceID[i] = deviceIDData[i];
+          }
+          this._deviceIdMapping[this._convertIDToMappingKey(deviceID)] = deviceName;
+          next(undefined, deviceID);
+        });
+      }), (mappingErr, deviceIds) => {
+        if (mappingErr) {
+          cb(mappingErr, undefined);
+          return;
+        }
+        cb(undefined, <number[][]>deviceIds);
+      });
     });
   }
 
-  public read(deviceID: string, numBytesToRead: number, cb: (err: string | Error | undefined, data: Buffer | undefined) => void): void {
-    const devicePath = join(DEVICES_DIR, deviceID, 'w1_slave');
+  public read(deviceID: number[], numBytesToRead: number, cb: (err: string | Error | undefined, data: Buffer | undefined) => void): void {
+    const devicePath = join(DEVICES_DIR, this._getNameFromID(deviceID), 'w1_slave');
     exists(devicePath, (fileExists) => {
       if (!fileExists) {
         cb(new Error(`Unknown device ID ${deviceID}`), undefined);
@@ -85,8 +117,8 @@ export class OneWire extends Peripheral {
     });
   }
 
-  public readAllAvailable(deviceID: string, cb: (err: string | Error | undefined, data: Buffer | undefined) => void): void {
-    const devicePath = join(DEVICES_DIR, deviceID, 'w1_slave');
+  public readAllAvailable(deviceID: number[], cb: (err: string | Error | undefined, data: Buffer | undefined) => void): void {
+    const devicePath = join(DEVICES_DIR, this._getNameFromID(deviceID), 'w1_slave');
     exists(devicePath, (fileExists) => {
       if (!fileExists) {
         cb(new Error(`Unknown device ID ${deviceID}`), undefined);

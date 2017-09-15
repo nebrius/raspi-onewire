@@ -1,14 +1,16 @@
 {
   "name": "raspi-onewire",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Provides access to 1-Wire on the Raspberry Pi from Node.js",
   "main": "dist/index.js",
   "types": "./declarations/index.d.ts",
   "dependencies": {
+    "async": "^2.5.0",
     "ini-builder": "^1.0.3",
     "raspi-peripheral": "^2.0.0"
   },
   "devDependencies": {
+    "@types/async": "^2.0.42",
     "@types/node": "^8.0.28",
     "tslint": "^5.7.0",
     "typescript": "^2.5.2"
