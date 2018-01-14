@@ -110,7 +110,7 @@ _Arguments_:
         </tr>
         <tr>
           <td>devices</td>
-          <td>undefined | String[]</td>
+          <td>undefined | Number[][]</td>
           <td>If no error occurred, an array of zero or more device IDs</td>
         </tr>
       </table>
