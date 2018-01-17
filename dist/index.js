@@ -48,12 +48,6 @@ var OneWire = /** @class */ (function (_super) {
         child_process_1.execSync('modprobe w1-gpio');
         return _this;
     }
-    OneWire.prototype._convertIDToMappingKey = function (deviceID) {
-        return deviceID.join('-');
-    };
-    OneWire.prototype._getNameFromID = function (deviceID) {
-        return this._deviceIdMapping[this._convertIDToMappingKey(deviceID)];
-    };
     OneWire.prototype.searchForDevices = function (cb) {
         var _this = this;
         fs_1.readFile(path_1.join(DEVICES_DIR, 'w1_master_slaves'), function (err, deviceNameListData) {
@@ -86,7 +80,7 @@ var OneWire = /** @class */ (function (_super) {
                     next(undefined, deviceID);
                 });
             }; }), function (mappingErr, deviceIds) {
-                if (mappingErr) {
+                if (mappingErr || !deviceIds) {
                     cb(mappingErr, undefined);
                     return;
                 }
@@ -128,6 +122,12 @@ var OneWire = /** @class */ (function (_super) {
             }
             fs_1.readFile(devicePath, cb);
         });
+    };
+    OneWire.prototype._convertIDToMappingKey = function (deviceID) {
+        return deviceID.join('-');
+    };
+    OneWire.prototype._getNameFromID = function (deviceID) {
+        return this._deviceIdMapping[this._convertIDToMappingKey(deviceID)];
     };
     return OneWire;
 }(raspi_peripheral_1.Peripheral));
